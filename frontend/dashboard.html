@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precatório Hunter - Sistema Profissional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .resultado {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-family: monospace;
+            white-space: pre-line;
+        }
+        
+        .erro {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Precatório Hunter</h1>
+            <p>Sistema Profissional de Captação de Precatórios</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-buscas">0</div>
+                <div class="stat-label">Buscas Realizadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="ofertas-geradas">0</div>
+                <div class="stat-label">Ofertas Geradas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="tribunais-ativos">3</div>
+                <div class="stat-label">Tribunais Monitorados</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🔍 Monitoramento de Tribunais</h3>
+            <p>Busca automática de novos precatórios nos tribunais federais.</p>
+            <button class="btn" onclick="buscarPrecatorios()">
+                🚀 Iniciar Busca nos Tribunais
+            </button>
+            <div id="resultados-busca"></div>
+        </div>
+        
+        <div class="card">
+            <h3>🤖 Gerador de Ofertas Inteligente</h3>
+            <p>Crie ofertas personalizadas e profissionais para os beneficiários.</p>
+            
+            <div class="form-group">
+                <label for="beneficiario">Nome do Beneficiário</label>
+                <input type="text" id="beneficiario" placeholder="Ex: João Silva">
+            </div>
+            
+            <div class="form-group">
+                <label for="valor">Valor do Precatório (R$)</label>
+                <input type="number" id="valor" placeholder="Ex: 50000" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="tribunal">Tribunal</label>
+                <select id="tribunal">
+                    <option value="TRF1">TRF 1ª Região (DF, GO, TO, MT, BA, PI, MA, PA, AP, RR, RO, AC, AM)</option>
+                    <option value="TRF2">TRF 2ª Região (RJ, ES)</option>
+                    <option value="TRF3">TRF 3ª Região (SP, MS)</option>
+                    <option value="TRF4">TRF 4ª Região (RS, SC, PR)</option>
+                    <option value="TRF5">TRF 5ª Região (PE, CE, AL, SE, RN, PB)</option>
+                </select>
+            </div>
+            
+            <button class="btn" onclick="gerarOferta()">
+                ✨ Gerar Oferta Profissional
+            </button>
+            
+            <div id="resultado-oferta"></div>
+        </div>
+    </div>
+
+    <script>
+        let totalBuscas = 0;
+        let ofertasGeradas = 0;
+        
+        function atualizarStats() {
+            document.getElementById('total-buscas').textContent = totalBuscas;
+            document.getElementById('ofertas-geradas').textContent = ofertasGeradas;
+        }
+        
+        function buscarPrecatorios() {
+            const container = document.getElementById('resultados-busca');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>🔍 Buscando precatórios nos tribunais federais...</p>
+                </div>
+            `;
+            
+            fetch('/buscar-precatorios')
+                .then(response => response.json())
+                .then(data => {
+                    totalBuscas++;
+                    atualizarStats();
+                    
+                    container.innerHTML = `
+                        <div class="resultado">
+                            <strong>✅ Busca Concluída!</strong>
+                            
+                            Status: ${data.status}
+                            Tribunais Consultados: ${data.tribunais.join(', ')}
+                            Precatórios Encontrados: ${data.total_encontrados}
+                            
+                            🎯 Sistema operacional e pronto para expansão!
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    container.innerHTML = `
+                        <div class="resultado erro">
+                            <strong>❌ Erro na Busca:</strong>
+                            ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function gerarOferta() {
+            const beneficiario = document.getElementById('beneficiario').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const tribunal = document.getElementById('tribunal').value;
+            
+            if (!beneficiario || !valor) {
+                alert('⚠️ Por favor, preencha o nome do beneficiário e o valor.');
+                return;
+            }
+            
+            const dados = { beneficiario, valor, tribunal };
+            const container = document.getElementById('resultado-oferta');
+            
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>🤖 Gerando oferta personalizada...</p>
+                </div>
+            `;
+
+            fetch('/gerar-oferta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.json())
+            .then(data => {
+                ofertasGeradas++;
+                atualizarStats();
+                
+                if (data.oferta) {
+                    container.innerHTML = `
+                        <div class="resultado">
+                            <strong>✅ Oferta Gerada com Sucesso!</strong>
+                            
+                            ${data.oferta}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="resultado erro">
+                            <strong>❌ Erro ao Gerar Oferta:</strong>
+                            ${data.erro}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                container.innerHTML = `
+                    <div class="resultado erro">
+                        <strong>❌ Erro de Conexão:</strong>
+                        ${error.message}
+                    </div>
+                `;
+            });
+        }
+        
+        // Inicializar stats
+        atualizarStats();
+    </script>
+</body>
+</html>
