@@ -1,163 +1,315 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request, jsonify
+import google.generativeai as genai
 import os
-from datetime import datetime
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import re
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'precatorio-hunter-2024')
 
-app_state = {
-    'inicializado': False,
-    'api_google_ok': False,
-    'total_buscas': 0,
-    'ofertas_geradas': 0,
-    'leads': []
-}
+# Configurar Gemini
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+
+# Configurar Banco de Dados
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    """Cria conexão com o banco de dados"""
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    return conn
+
+def init_db():
+    """Inicializa as tabelas do banco de dados"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Tabela de precatórios
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS precatorios (
+            id SERIAL PRIMARY KEY,
+            trf VARCHAR(10) NOT NULL,
+            ordem INTEGER,
+            numero_precatorio VARCHAR(50) NOT NULL,
+            valor DECIMAL(15,2),
+            preferencia_legal VARCHAR(100),
+            nome_beneficiario VARCHAR(255),
+            telefone VARCHAR(50),
+            email VARCHAR(255),
+            status VARCHAR(50) DEFAULT 'novo',
+            data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(trf, numero_precatorio)
+        )
+    ''')
+    
+    # Tabela de ofertas geradas
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS ofertas (
+            id SERIAL PRIMARY KEY,
+            precatorio_id INTEGER REFERENCES precatorios(id),
+            texto_oferta TEXT,
+            deságio_percentual DECIMAL(5,2),
+            valor_oferta DECIMAL(15,2),
+            data_geracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# Inicializar banco ao iniciar app
+try:
+    if DATABASE_URL:
+        init_db()
+        print("✅ Banco de dados inicializado com sucesso!")
+except Exception as e:
+    print(f"⚠️ Erro ao inicializar banco: {e}")
+
+def parse_valor(valor_str):
+    """Converte string de valor para float"""
+    if not valor_str:
+        return 0.0
+    # Remove espaços e caracteres especiais
+    valor_str = valor_str.strip()
+    # Remove R$ se existir
+    valor_str = valor_str.replace('R$', '').strip()
+    # Remove pontos de milhar e troca vírgula por ponto
+    valor_str = valor_str.replace('.', '').replace(',', '.')
+    try:
+        return float(valor_str)
+    except:
+        return 0.0
+
+def parse_tabela(texto, trf):
+    """Faz o parse da tabela colada pelo usuário"""
+    linhas = texto.strip().split('\n')
+    precatorios = []
+    
+    for linha in linhas:
+        # Pula linhas vazias ou cabeçalhos
+        linha = linha.strip()
+        if not linha:
+            continue
+        if 'ORDEM' in linha.upper() or 'PRECATÓRIO' in linha.upper() or 'VALOR' in linha.upper():
+            continue
+        if 'PODER JUDICIÁRIO' in linha.upper() or 'TRIBUNAL' in linha.upper():
+            continue
+        if 'ALIMENTAR' in linha.upper() or 'RELAÇÃO' in linha.upper():
+            continue
+            
+        # Tenta extrair dados da linha
+        # Padrão esperado: ORDEM | PRECATÓRIO | VALOR | PREFERÊNCIA
+        partes = re.split(r'\t+|\s{2,}', linha)
+        partes = [p.strip() for p in partes if p.strip()]
+        
+        if len(partes) >= 3:
+            try:
+                ordem = int(partes[0]) if partes[0].isdigit() else None
+                numero = partes[1] if len(partes[1]) > 10 else partes[0]
+                
+                # Procura o valor (contém vírgula e números)
+                valor = 0.0
+                preferencia = '-'
+                
+                for i, parte in enumerate(partes):
+                    if ',' in parte and any(c.isdigit() for c in parte):
+                        valor = parse_valor(parte)
+                    elif 'maior' in parte.lower() or 'idade' in parte.lower() or 'doença' in parte.lower():
+                        preferencia = parte
+                    elif i == len(partes) - 1 and valor > 0:
+                        preferencia = parte if parte != '-' else preferencia
+                
+                if numero and len(numero) > 10:
+                    precatorios.append({
+                        'trf': trf,
+                        'ordem': ordem,
+                        'numero_precatorio': numero,
+                        'valor': valor,
+                        'preferencia_legal': preferencia
+                    })
+            except Exception as e:
+                print(f"Erro ao parsear linha: {linha} - {e}")
+                continue
+    
+    return precatorios
 
 @app.route('/')
-def home():
-    logger.info("Acessando dashboard principal")
-    return render_template('dashboard.html', state=app_state)
+def index():
+    return render_template('index.html')
 
-@app.route('/health')
-def health_check():
-    status = {
-        'sistema': 'online',
-        'timestamp': datetime.now().isoformat(),
-        'google_ai': 'testando...',
-        'database': 'ok',
-        'version': '2.0'
-    }
-    
+@app.route('/importar', methods=['POST'])
+def importar_tabela():
+    """Importa tabela de precatórios"""
     try:
-        api_key = os.getenv('GOOGLE_AI_API_KEY')
-        if api_key and len(api_key) > 30:
-            status['google_ai'] = 'configurado'
-            app_state['api_google_ok'] = True
-        else:
-            status['google_ai'] = 'não configurado'
-    except Exception as e:
-        status['google_ai'] = f'erro: {str(e)}'
-    
-    app_state['inicializado'] = True
-    return jsonify(status)
-
-@app.route('/buscar-processo', methods=['POST'])
-def buscar_processo():
-    try:
-        numero_processo = request.json.get('numero_processo', '').strip()
+        data = request.json
+        trf = data.get('trf', 'TRF1')
+        tabela_texto = data.get('tabela', '')
         
-        if not numero_processo:
-            return jsonify({'erro': 'Número do processo obrigatório'}), 400
+        if not tabela_texto:
+            return jsonify({'success': False, 'error': 'Nenhuma tabela fornecida'})
         
-        logger.info(f"Buscando processo: {numero_processo}")
+        # Parse da tabela
+        precatorios = parse_tabela(tabela_texto, trf)
         
-        resultado = {
-            'numero_processo': numero_processo,
-            'encontrado': True,
-            'beneficiario': f'Beneficiário Teste {numero_processo[-4:]}',
-            'valor': 50000.00 + (hash(numero_processo) % 100000),
-            'tribunal': 'TRF1',
-            'status': 'Ativo',
-            'data_busca': datetime.now().isoformat()
-        }
+        if not precatorios:
+            return jsonify({'success': False, 'error': 'Não foi possível extrair dados da tabela. Verifique o formato.'})
         
-        app_state['leads'].append(resultado)
-        app_state['total_buscas'] += 1
+        # Salvar no banco
+        conn = get_db_connection()
+        cur = conn.cursor()
         
-        return jsonify(resultado)
+        inseridos = 0
+        atualizados = 0
         
-    except Exception as e:
-        logger.error(f"Erro na busca: {str(e)}")
-        return jsonify({'erro': str(e)}), 500
-
-@app.route('/gerar-oferta', methods=['POST'])
-def gerar_oferta():
-    try:
-        dados = request.json
-        logger.info(f"Gerando oferta para: {dados.get('beneficiario')}")
+        for p in precatorios:
+            try:
+                cur.execute('''
+                    INSERT INTO precatorios (trf, ordem, numero_precatorio, valor, preferencia_legal)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (trf, numero_precatorio) 
+                    DO UPDATE SET valor = EXCLUDED.valor, preferencia_legal = EXCLUDED.preferencia_legal
+                    RETURNING (xmax = 0) AS inserted
+                ''', (p['trf'], p['ordem'], p['numero_precatorio'], p['valor'], p['preferencia_legal']))
+                
+                result = cur.fetchone()
+                if result['inserted']:
+                    inseridos += 1
+                else:
+                    atualizados += 1
+            except Exception as e:
+                print(f"Erro ao inserir precatório: {e}")
+                continue
         
-        oferta = gerar_oferta_ia(dados)
-        
-        if not oferta:
-            oferta = gerar_oferta_template(dados)
-        
-        app_state['ofertas_geradas'] += 1
+        conn.commit()
+        cur.close()
+        conn.close()
         
         return jsonify({
-            'oferta': oferta,
-            'metodo': 'ia' if 'Gemini' in str(oferta) else 'template',
-            'timestamp': datetime.now().isoformat()
+            'success': True, 
+            'message': f'Importação concluída! {inseridos} novos precatórios inseridos, {atualizados} atualizados.',
+            'total': len(precatorios)
         })
         
     except Exception as e:
-        logger.error(f"Erro ao gerar oferta: {str(e)}")
-        return jsonify({'erro': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)})
 
-def gerar_oferta_ia(dados):
+@app.route('/precatorios')
+def listar_precatorios():
+    """Lista precatórios do banco"""
     try:
-        import google.generativeai as genai
+        trf = request.args.get('trf', '')
         
-        api_key = os.getenv('GOOGLE_AI_API_KEY')
-        if not api_key:
-            return None
-            
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
+        conn = get_db_connection()
+        cur = conn.cursor()
         
+        if trf:
+            cur.execute('''
+                SELECT * FROM precatorios 
+                WHERE trf = %s 
+                ORDER BY valor DESC
+            ''', (trf,))
+        else:
+            cur.execute('''
+                SELECT * FROM precatorios 
+                ORDER BY trf, valor DESC
+            ''')
+        
+        precatorios = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'precatorios': precatorios})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/estatisticas')
+def estatisticas():
+    """Retorna estatísticas dos precatórios"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute('''
+            SELECT 
+                trf,
+                COUNT(*) as total,
+                SUM(valor) as valor_total,
+                AVG(valor) as valor_medio
+            FROM precatorios
+            GROUP BY trf
+            ORDER BY trf
+        ''')
+        
+        stats = cur.fetchall()
+        
+        cur.execute('SELECT COUNT(*) as total, SUM(valor) as valor_total FROM precatorios')
+        total_geral = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'por_trf': stats,
+            'total_geral': total_geral
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/gerar-oferta', methods=['POST'])
+def gerar_oferta():
+    """Gera oferta personalizada usando IA"""
+    try:
+        data = request.json
+        precatorio_id = data.get('precatorio_id')
+        
+        # Buscar dados do precatório
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM precatorios WHERE id = %s', (precatorio_id,))
+        precatorio = cur.fetchone()
+        cur.close()
+        conn.close()
+        
+        if not precatorio:
+            return jsonify({'success': False, 'error': 'Precatório não encontrado'})
+        
+        # Gerar oferta com IA
         prompt = f"""
-        Como advogado especialista em precatórios, crie uma oferta profissional:
+        Você é um especialista em compra de precatórios federais. Gere uma proposta comercial 
+        profissional e persuasiva para aquisição do seguinte precatório:
+
+        - Tribunal: {precatorio['trf']}
+        - Número do Precatório: {precatorio['numero_precatorio']}
+        - Valor: R$ {precatorio['valor']:,.2f}
+        - Preferência Legal: {precatorio['preferencia_legal']}
         
-        Beneficiário: {dados.get('beneficiario', 'Não informado')}
-        Valor: R$ {dados.get('valor', 0):,.2f}
-        Tribunal: {dados.get('tribunal', 'Não informado')}
-        Processo: {dados.get('numero_processo', 'Não informado')}
+        A proposta deve:
+        1. Ser cordial e profissional
+        2. Explicar brevemente as vantagens de antecipar o recebimento
+        3. Oferecer um deságio de 20% a 35% dependendo do perfil
+        4. Mencionar que o pagamento é rápido (até 48h após assinatura)
+        5. Ser concisa (máximo 200 palavras)
         
-        A oferta deve ser respeitosa, transparente e com máximo 250 palavras.
-        Assine como: "Equipe Precatório Hunter - Powered by Gemini AI"
+        Formato: texto pronto para enviar por WhatsApp/Email.
         """
         
         response = model.generate_content(prompt)
-        return response.text
+        oferta_texto = response.text
+        
+        return jsonify({
+            'success': True,
+            'oferta': oferta_texto,
+            'precatorio': dict(precatorio)
+        })
         
     except Exception as e:
-        logger.error(f"Erro na IA: {str(e)}")
-        return None
-
-def gerar_oferta_template(dados):
-    return f"""
-PROPOSTA DE AQUISIÇÃO DE PRECATÓRIO
-
-Prezado(a) {dados.get('beneficiario', 'Beneficiário')},
-
-📋 DADOS DO PRECATÓRIO:
-• Processo: {dados.get('numero_processo', 'N/A')}
-• Valor: R$ {dados.get('valor', 0):,.2f}
-• Tribunal: {dados.get('tribunal', 'N/A')}
-
-💼 NOSSA PROPOSTA:
-• Pagamento à vista
-• Processo 100% seguro
-• Sem custos para você
-
-Atenciosamente,
-Equipe Precatório Hunter v2.0
-    """
-
-@app.route('/leads')
-def listar_leads():
-    return jsonify({
-        'leads': app_state['leads'],
-        'total': len(app_state['leads']),
-        'stats': {
-            'total_buscas': app_state['total_buscas'],
-            'ofertas_geradas': app_state['ofertas_geradas']
-        }
-    })
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)
