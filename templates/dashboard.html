@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precatório Hunter v2.0 - Sistema Estável</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #1e3c72;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+        }
+        
+        .version {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status-card.online { border-left: 4px solid #28a745; }
+        .status-card.warning { border-left: 4px solid #ffc107; }
+        .status-card.error { border-left: 4px solid #dc3545; }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            border-color: #1e3c72;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .resultado {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            white-space: pre-line;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .erro {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e3c72;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .leads-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .leads-table th,
+        .leads-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .leads-table th {
+            background: #1e3c72;
+            color: white;
+        }
+        
+        .leads-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .debug-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 20px;
+        }
+        
+        .footer a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Precatório Hunter</h1>
+            <p>Sistema Profissional de Captação de Precatórios</p>
+            <span class="version">v2.0 - Versão Estável</span>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-card online">
+                <h4>Sistema</h4>
+                <p id="status-sistema">🟢 Online</p>
+            </div>
+            <div class="status-card" id="status-google">
+                <h4>Google AI</h4>
+                <p id="status-ai">🔄 Verificando...</p>
+            </div>
+            <div class="status-card online">
+                <h4>Buscas</h4>
+                <p id="total-buscas">0</p>
+            </div>
+            <div class="status-card online">
+                <h4>Ofertas</h4>
+                <p id="total-ofertas">0</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🔍 Busca por Número de Processo</h3>
+            <p>Digite o número completo do processo para buscar informações.</p>
+            
+            <div class="form-group">
+                <label for="numero-processo">Número do Processo</label>
+                <input type="text" id="numero-processo" 
+                       placeholder="Ex: 0123456-78.2023.4.01.3400" 
+                       maxlength="25">
+            </div>
+            
+            <button class="btn" onclick="buscarProcesso()">
+                🔍 Buscar Processo
+            </button>
+            
+            <div id="resultado-busca"></div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Leads Encontrados</h3>
+            <button class="btn" onclick="atualizarLeads()">🔄 Atualizar Lista</button>
+            
+            <div id="lista-leads">
+                <p>Nenhum lead encontrado ainda. Faça uma busca acima.</p>
+            </div>
+        </div>
+        
+        <div class="debug-info">
+            <strong>🔧 Informações de Debug:</strong><br>
+            Timestamp: <span id="debug-time"></span><br>
+            Status API: <span id="debug-api">Carregando...</span><br>
+            Última Ação: <span id="debug-action">Sistema inicializado</span>
+        </div>
+        
+        <div class="footer">
+            <p>Precatório Hunter v2.0 | Desenvolvido com ❤️ | 
+            <a href="/health">Verificar Status</a></p>
+        </div>
+    </div>
+
+    <script>
+        let leads = [];
+        
+        // Inicializar sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarSistema();
+            atualizarTimestamp();
+            setInterval(atualizarTimestamp, 30000);
+        });
+        
+        function atualizarTimestamp() {
+            document.getElementById('debug-time').textContent = new Date().toLocaleString('pt-BR');
+        }
+        
+        function verificarSistema() {
+            document.getElementById('debug-action').textContent = 'Verificando sistema...';
+            
+            fetch('/health')
+                .then(response => response.json())
+                .then(data => {
+                    const statusAI = document.getElementById('status-ai');
+                    const statusCard = document.getElementById('status-google');
+                    
+                    if (data.google_ai === 'configurado') {
+                        statusAI.textContent = '🟢 Configurado';
+                        statusCard.className = 'status-card online';
+                        document.getElementById('debug-api').textContent = 'Google AI OK';
+                    } else {
+                        statusAI.textContent = '🟡 ' + data.google_ai;
+                        statusCard.className = 'status-card warning';
+                        document.getElementById('debug-api').textContent = data.google_ai;
+                    }
+                    
+                    document.getElementById('debug-action').textContent = 'Sistema verificado - ' + data.version;
+                })
+                .catch(error => {
+                    document.getElementById('status-ai').textContent = '🔴 Erro';
+                    document.getElementById('status-google').className = 'status-card error';
+                    document.getElementById('debug-action').textContent = 'Erro: ' + error.message;
+                });
+        }
+        
+        function buscarProcesso() {
+            const numeroProcesso = document.getElementById('numero-processo').value.trim();
+            
+            if (!numeroProcesso) {
+                alert('⚠️ Digite o número do processo');
+                return;
+            }
+            
+            const container = document.getElementById('resultado-busca');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>🔍 Buscando processo ${numeroProcesso}...</p>
+                </div>
+            `;
+            
+            document.getElementById('debug-action').textContent = 'Buscando: ' + numeroProcesso;
+            
+            fetch('/buscar-processo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({numero_processo: numeroProcesso})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    container.innerHTML = `
+                        <div class="resultado erro">
+                            <strong>❌ Erro:</strong> ${data.erro}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="resultado">
+                            <strong>✅ Processo Encontrado!</strong>
+                            
+Número: ${data.numero_processo}
+Beneficiário: ${data.beneficiario}
+Valor: R$ ${data.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+Tribunal: ${data.tribunal}
+Status: ${data.status}
+                            
+                            <button class="btn" onclick="gerarOferta('${data.numero_processo}', '${data.beneficiario}', ${data.valor}, '${data.tribunal}')">
+                                ✨ Gerar Oferta
+                            </button>
+                        </div>
+                    `;
+                    
+                    const totalBuscas = parseInt(document.getElementById('total-buscas').textContent) + 1;
+                    document.getElementById('total-buscas').textContent = totalBuscas;
+                    
+                    document.getElementById('debug-action').textContent = 'Processo encontrado: ' + data.beneficiario;
+                }
+            })
+            .catch(error => {
+                container.innerHTML = `
+                    <div class="resultado erro">
+                        <strong>❌ Erro de Conexão:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('debug-action').textContent = 'Erro: ' + error.message;
+            });
+        }
+        
+        function gerarOferta(processo, beneficiario, valor, tribunal) {
+            const dados = {
+                numero_processo: processo,
+                beneficiario: beneficiario,
+                valor: valor,
+                tribunal: tribunal
+            };
+            
+            const container = document.getElementById('resultado-busca');
+            const ofertaDiv = document.createElement('div');
+            ofertaDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>🤖 Gerando oferta personalizada...</p>
+                </div>
+            `;
+            container.appendChild(ofertaDiv);
+            
+            document.getElementById('debug-action').textContent = 'Gerando oferta para: ' + beneficiario;
+            
+            fetch('/gerar-oferta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.json())
+            .then(data => {
+                ofertaDiv.innerHTML = `
+                    <div class="resultado">
+                        <strong>✅ Oferta Gerada (${data.metodo})!</strong>
+                        
+${data.oferta}
+                    </div>
+                `;
+                
+                const totalOfertas = parseInt(document.getElementById('total-ofertas').textContent) + 1;
+                document.getElementById('total-ofertas').textContent = totalOfertas;
+                
+                document.getElementById('debug-action').textContent = 'Oferta gerada via ' + data.metodo;
+            })
+            .catch(error => {
+                ofertaDiv.innerHTML = `
+                    <div class="resultado erro">
+                        <strong>❌ Erro ao Gerar Oferta:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('debug-action').textContent = 'Erro na oferta: ' + error.message;
+            });
+        }
+        
+        function atualizarLeads() {
+            document.getElementById('debug-action').textContent = 'Atualizando leads...';
+            
+            fetch('/leads')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('lista-leads');
+                    
+                    if (data.leads.length === 0) {
+                        container.innerHTML = '<p>Nenhum lead encontrado ainda. Faça uma busca acima.</p>';
+                        return;
+                    }
+                    
+                    let html = `
+                        <table class="leads-table">
+                            <thead>
+                                <tr>
+                                    <th>Processo</th>
+                                    <th>Beneficiário</th>
+                                    <th>Valor</th>
+                                    <th>Tribunal</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.leads.forEach(lead => {
+                        const dataFormatada = new Date(lead.data_busca).toLocaleDateString('pt-BR');
+                        html += `
+                            <tr>
+                                <td>${lead.numero_processo}</td>
+                                <td>${lead.beneficiario}</td>
+                                <td>R$ ${lead.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                <td>${lead.tribunal}</td>
+                                <td>${dataFormatada}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                    
+                    document.getElementById('debug-action').textContent = data.leads.length + ' leads carregados';
+                })
+                .catch(error => {
+                    document.getElementById('debug-action').textContent = 'Erro ao carregar leads: ' + error.message;
+                });
+        }
+    </script>
+</body>
+</html>
