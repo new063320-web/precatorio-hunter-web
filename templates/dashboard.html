@@ -3,479 +3,644 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Precatório Hunter v2.0 - Sistema Estável</title>
+    <title>Precatório Hunter v2.1</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-            color: #333;
+            color: #fff;
         }
         
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         
-        .header {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
+        header {
             text-align: center;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
         }
         
-        .header h1 {
-            color: #1e3c72;
-            font-size: 2.8em;
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
         }
         
-        .version {
-            background: #28a745;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            display: inline-block;
-            margin-top: 10px;
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
         }
         
-        .status-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px 30px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .stat-card h3 {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
             margin-bottom: 25px;
         }
         
-        .status-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .status-card.online { border-left: 4px solid #28a745; }
-        .status-card.warning { border-left: 4px solid #ffc107; }
-        .status-card.error { border-left: 4px solid #dc3545; }
-        
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
+        .section h2 {
             margin-bottom: 20px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .card h3 {
-            color: #1e3c72;
+        .trf-selector {
+            display: flex;
+            gap: 10px;
             margin-bottom: 20px;
-            font-size: 1.4em;
+            flex-wrap: wrap;
         }
         
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e1e1;
+        .trf-btn {
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: #fff;
             border-radius: 8px;
-            font-size: 16px;
+            cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 1em;
         }
         
-        .form-group input:focus {
-            border-color: #1e3c72;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        .trf-btn:hover, .trf-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.9em;
+            resize: vertical;
+        }
+        
+        textarea::placeholder {
+            color: #666;
         }
         
         .btn {
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 12px 25px;
+            padding: 12px 30px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
             cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
             transition: all 0.3s ease;
-            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .btn:hover {
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            color: #1a1a2e;
+        }
+        
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
         }
         
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
-        .resultado {
-            background: #f8f9fa;
-            border-left: 4px solid #28a745;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 0 8px 8px 0;
-            white-space: pre-line;
-            font-family: 'Courier New', monospace;
+        .btn-success {
+            background: #00ff88;
+            color: #1a1a2e;
         }
         
-        .erro {
-            border-left-color: #dc3545;
-            background: #f8d7da;
-            color: #721c24;
+        .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         
-        .loading {
-            text-align: center;
-            padding: 30px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #1e3c72;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .leads-table {
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
         
-        .leads-table th,
-        .leads-table td {
-            padding: 12px;
+        th, td {
+            padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
-        .leads-table th {
-            background: #1e3c72;
-            color: white;
+        th {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            font-weight: 600;
         }
         
-        .leads-table tr:hover {
-            background: #f5f5f5;
+        tr:hover {
+            background: rgba(255,255,255,0.05);
         }
         
-        .debug-info {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            padding: 15px;
+        .valor {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .preferencia {
+            font-size: 0.85em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+        
+        .preferencia.sem {
+            background: rgba(255,255,255,0.1);
+            color: #888;
+        }
+        
+        .status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status.novo {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        .message {
+            padding: 15px 20px;
             border-radius: 8px;
-            margin-top: 20px;
-            font-family: monospace;
-            font-size: 0.9em;
+            margin: 15px 0;
+            display: none;
         }
         
-        .footer {
+        .message.success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+        
+        .message.error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        .loading {
+            display: none;
             text-align: center;
-            padding: 20px;
-            color: white;
-            margin-top: 20px;
+            padding: 40px;
         }
         
-        .footer a {
-            color: #ffd700;
-            text-decoration: none;
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .oferta-texto {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .stat-card { min-width: 100%; }
+            table { font-size: 0.85em; }
+            th, td { padding: 8px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🏛️ Precatório Hunter</h1>
-            <p>Sistema Profissional de Captação de Precatórios</p>
-            <span class="version">v2.0 - Versão Estável</span>
-        </div>
+        <header>
+            <h1>🎯 Precatório Hunter v2.1</h1>
+            <p class="subtitle">Sistema Inteligente de Captação de Precatórios Federais</p>
+        </header>
         
-        <div class="status-bar">
-            <div class="status-card online">
-                <h4>Sistema</h4>
-                <p id="status-sistema">🟢 Online</p>
+        <!-- Estatísticas -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <h3>📊 Total de Precatórios</h3>
+                <div class="value" id="total-precatorios">0</div>
             </div>
-            <div class="status-card" id="status-google">
-                <h4>Google AI</h4>
-                <p id="status-ai">🔄 Verificando...</p>
+            <div class="stat-card">
+                <h3>💰 Valor Total</h3>
+                <div class="value" id="valor-total">R$ 0,00</div>
             </div>
-            <div class="status-card online">
-                <h4>Buscas</h4>
-                <p id="total-buscas">0</p>
-            </div>
-            <div class="status-card online">
-                <h4>Ofertas</h4>
-                <p id="total-ofertas">0</p>
+            <div class="stat-card">
+                <h3>🏛️ Tribunais</h3>
+                <div class="value" id="total-tribunais">0</div>
             </div>
         </div>
         
-        <div class="card">
-            <h3>🔍 Busca por Número de Processo</h3>
-            <p>Digite o número completo do processo para buscar informações.</p>
+        <!-- Seção de Importação -->
+        <div class="section">
+            <h2>📥 Importar Tabela de Precatórios</h2>
             
-            <div class="form-group">
-                <label for="numero-processo">Número do Processo</label>
-                <input type="text" id="numero-processo" 
-                       placeholder="Ex: 0123456-78.2023.4.01.3400" 
-                       maxlength="25">
+            <p style="color: #888; margin-bottom: 15px;">
+                1. Selecione o Tribunal | 2. Cole a tabela do site | 3. Clique em Importar
+            </p>
+            
+            <div class="trf-selector">
+                <button class="trf-btn active" data-trf="TRF1">TRF1</button>
+                <button class="trf-btn" data-trf="TRF2">TRF2</button>
+                <button class="trf-btn" data-trf="TRF3">TRF3</button>
+                <button class="trf-btn" data-trf="TRF4">TRF4</button>
+                <button class="trf-btn" data-trf="TRF5">TRF5</button>
+                <button class="trf-btn" data-trf="TRF6">TRF6</button>
             </div>
             
-            <button class="btn" onclick="buscarProcesso()">
-                🔍 Buscar Processo
-            </button>
+            <textarea id="tabela-input" placeholder="Cole aqui a tabela copiada do site do tribunal...
+
+Exemplo:
+1    2152200320244019198    119.945,29    Maior de 60 anos de idade
+2    2152235520244019198    166.476,53    Maior de 60 anos de idade
+3    2152252520244019198    165.330,71    Maior de 60 anos de idade"></textarea>
             
-            <div id="resultado-busca"></div>
-        </div>
-        
-        <div class="card">
-            <h3>📊 Leads Encontrados</h3>
-            <button class="btn" onclick="atualizarLeads()">🔄 Atualizar Lista</button>
-            
-            <div id="lista-leads">
-                <p>Nenhum lead encontrado ainda. Faça uma busca acima.</p>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="importarTabela()">
+                    📥 Importar Dados
+                </button>
+                <button class="btn btn-secondary" onclick="limparCampo()">
+                    🗑️ Limpar
+                </button>
             </div>
+            
+            <div id="import-message" class="message"></div>
         </div>
         
-        <div class="debug-info">
-            <strong>🔧 Informações de Debug:</strong><br>
-            Timestamp: <span id="debug-time"></span><br>
-            Status API: <span id="debug-api">Carregando...</span><br>
-            Última Ação: <span id="debug-action">Sistema inicializado</span>
-        </div>
-        
-        <div class="footer">
-            <p>Precatório Hunter v2.0 | Desenvolvido com ❤️ | 
-            <a href="/health">Verificar Status</a></p>
+        <!-- Seção de Lista de Precatórios -->
+        <div class="section">
+            <h2>📋 Lista de Precatórios</h2>
+            
+            <div class="trf-selector">
+                <button class="trf-btn filter-btn active" data-filter="">Todos</button>
+                <button class="trf-btn filter-btn" data-filter="TRF1">TRF1</button>
+                <button class="trf-btn filter-btn" data-filter="TRF2">TRF2</button>
+                <button class="trf-btn filter-btn" data-filter="TRF3">TRF3</button>
+                <button class="trf-btn filter-btn" data-filter="TRF4">TRF4</button>
+                <button class="trf-btn filter-btn" data-filter="TRF5">TRF5</button>
+                <button class="trf-btn filter-btn" data-filter="TRF6">TRF6</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Carregando precatórios...</p>
+            </div>
+            
+            <div id="tabela-container">
+                <div class="empty-state" id="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3>Nenhum precatório importado</h3>
+                    <p>Cole uma tabela acima para começar</p>
+                </div>
+                
+                <table id="precatorios-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>TRF</th>
+                            <th>Nº Precatório</th>
+                            <th>Valor</th>
+                            <th>Preferência</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="precatorios-body">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-
+    
+    <!-- Modal de Oferta -->
+    <div class="modal" id="modal-oferta">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 Oferta Gerada</h3>
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+            </div>
+            <div class="oferta-texto" id="oferta-texto"></div>
+            <div class="actions" style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="copiarOferta()">📋 Copiar</button>
+                <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        let leads = [];
+        let trfSelecionado = 'TRF1';
+        let filtroAtual = '';
         
-        // Inicializar sistema
-        document.addEventListener('DOMContentLoaded', function() {
-            verificarSistema();
-            atualizarTimestamp();
-            setInterval(atualizarTimestamp, 30000);
+        // Seletor de TRF para importação
+        document.querySelectorAll('.trf-btn:not(.filter-btn)').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.trf-btn:not(.filter-btn)').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                trfSelecionado = btn.dataset.trf;
+            });
         });
         
-        function atualizarTimestamp() {
-            document.getElementById('debug-time').textContent = new Date().toLocaleString('pt-BR');
+        // Filtro de TRF para listagem
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                filtroAtual = btn.dataset.filter;
+                carregarPrecatorios();
+            });
+        });
+        
+        function formatarValor(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
         }
         
-        function verificarSistema() {
-            document.getElementById('debug-action').textContent = 'Verificando sistema...';
-            
-            fetch('/health')
-                .then(response => response.json())
-                .then(data => {
-                    const statusAI = document.getElementById('status-ai');
-                    const statusCard = document.getElementById('status-google');
-                    
-                    if (data.google_ai === 'configurado') {
-                        statusAI.textContent = '🟢 Configurado';
-                        statusCard.className = 'status-card online';
-                        document.getElementById('debug-api').textContent = 'Google AI OK';
-                    } else {
-                        statusAI.textContent = '🟡 ' + data.google_ai;
-                        statusCard.className = 'status-card warning';
-                        document.getElementById('debug-api').textContent = data.google_ai;
-                    }
-                    
-                    document.getElementById('debug-action').textContent = 'Sistema verificado - ' + data.version;
-                })
-                .catch(error => {
-                    document.getElementById('status-ai').textContent = '🔴 Erro';
-                    document.getElementById('status-google').className = 'status-card error';
-                    document.getElementById('debug-action').textContent = 'Erro: ' + error.message;
-                });
+        function mostrarMensagem(tipo, texto) {
+            const msg = document.getElementById('import-message');
+            msg.className = `message ${tipo}`;
+            msg.textContent = texto;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 5000);
         }
         
-        function buscarProcesso() {
-            const numeroProcesso = document.getElementById('numero-processo').value.trim();
+        async function importarTabela() {
+            const tabela = document.getElementById('tabela-input').value;
             
-            if (!numeroProcesso) {
-                alert('⚠️ Digite o número do processo');
+            if (!tabela.trim()) {
+                mostrarMensagem('error', 'Por favor, cole a tabela antes de importar.');
                 return;
             }
             
-            const container = document.getElementById('resultado-busca');
-            container.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>🔍 Buscando processo ${numeroProcesso}...</p>
-                </div>
-            `;
-            
-            document.getElementById('debug-action').textContent = 'Buscando: ' + numeroProcesso;
-            
-            fetch('/buscar-processo', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({numero_processo: numeroProcesso})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.erro) {
-                    container.innerHTML = `
-                        <div class="resultado erro">
-                            <strong>❌ Erro:</strong> ${data.erro}
-                        </div>
-                    `;
+            try {
+                const response = await fetch('/importar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trf: trfSelecionado, tabela: tabela })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    mostrarMensagem('success', data.message);
+                    document.getElementById('tabela-input').value = '';
+                    carregarPrecatorios();
+                    carregarEstatisticas();
                 } else {
-                    container.innerHTML = `
-                        <div class="resultado">
-                            <strong>✅ Processo Encontrado!</strong>
-                            
-Número: ${data.numero_processo}
-Beneficiário: ${data.beneficiario}
-Valor: R$ ${data.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-Tribunal: ${data.tribunal}
-Status: ${data.status}
-                            
-                            <button class="btn" onclick="gerarOferta('${data.numero_processo}', '${data.beneficiario}', ${data.valor}, '${data.tribunal}')">
-                                ✨ Gerar Oferta
-                            </button>
-                        </div>
-                    `;
-                    
-                    const totalBuscas = parseInt(document.getElementById('total-buscas').textContent) + 1;
-                    document.getElementById('total-buscas').textContent = totalBuscas;
-                    
-                    document.getElementById('debug-action').textContent = 'Processo encontrado: ' + data.beneficiario;
+                    mostrarMensagem('error', data.error);
                 }
-            })
-            .catch(error => {
-                container.innerHTML = `
-                    <div class="resultado erro">
-                        <strong>❌ Erro de Conexão:</strong> ${error.message}
-                    </div>
-                `;
-                document.getElementById('debug-action').textContent = 'Erro: ' + error.message;
-            });
+            } catch (error) {
+                mostrarMensagem('error', 'Erro ao importar: ' + error.message);
+            }
         }
         
-        function gerarOferta(processo, beneficiario, valor, tribunal) {
-            const dados = {
-                numero_processo: processo,
-                beneficiario: beneficiario,
-                valor: valor,
-                tribunal: tribunal
-            };
-            
-            const container = document.getElementById('resultado-busca');
-            const ofertaDiv = document.createElement('div');
-            ofertaDiv.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>🤖 Gerando oferta personalizada...</p>
-                </div>
-            `;
-            container.appendChild(ofertaDiv);
-            
-            document.getElementById('debug-action').textContent = 'Gerando oferta para: ' + beneficiario;
-            
-            fetch('/gerar-oferta', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            })
-            .then(response => response.json())
-            .then(data => {
-                ofertaDiv.innerHTML = `
-                    <div class="resultado">
-                        <strong>✅ Oferta Gerada (${data.metodo})!</strong>
-                        
-${data.oferta}
-                    </div>
-                `;
-                
-                const totalOfertas = parseInt(document.getElementById('total-ofertas').textContent) + 1;
-                document.getElementById('total-ofertas').textContent = totalOfertas;
-                
-                document.getElementById('debug-action').textContent = 'Oferta gerada via ' + data.metodo;
-            })
-            .catch(error => {
-                ofertaDiv.innerHTML = `
-                    <div class="resultado erro">
-                        <strong>❌ Erro ao Gerar Oferta:</strong> ${error.message}
-                    </div>
-                `;
-                document.getElementById('debug-action').textContent = 'Erro na oferta: ' + error.message;
-            });
+        function limparCampo() {
+            document.getElementById('tabela-input').value = '';
         }
         
-        function atualizarLeads() {
-            document.getElementById('debug-action').textContent = 'Atualizando leads...';
+        async function carregarPrecatorios() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('precatorios-table');
+            const empty = document.getElementById('empty-state');
+            const tbody = document.getElementById('precatorios-body');
             
-            fetch('/leads')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('lista-leads');
+            loading.classList.add('show');
+            table.style.display = 'none';
+            empty.style.display = 'none';
+            
+            try {
+                const url = filtroAtual ? `/precatorios?trf=${filtroAtual}` : '/precatorios';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                loading.classList.remove('show');
+                
+                if (data.success && data.precatorios.length > 0) {
+                    tbody.innerHTML = '';
                     
-                    if (data.leads.length === 0) {
-                        container.innerHTML = '<p>Nenhum lead encontrado ainda. Faça uma busca acima.</p>';
-                        return;
-                    }
-                    
-                    let html = `
-                        <table class="leads-table">
-                            <thead>
-                                <tr>
-                                    <th>Processo</th>
-                                    <th>Beneficiário</th>
-                                    <th>Valor</th>
-                                    <th>Tribunal</th>
-                                    <th>Data</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    
-                    data.leads.forEach(lead => {
-                        const dataFormatada = new Date(lead.data_busca).toLocaleDateString('pt-BR');
-                        html += `
-                            <tr>
-                                <td>${lead.numero_processo}</td>
-                                <td>${lead.beneficiario}</td>
-                                <td>R$ ${lead.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                                <td>${lead.tribunal}</td>
-                                <td>${dataFormatada}</td>
-                            </tr>
+                    data.precatorios.forEach(p => {
+                        const prefClass = p.preferencia_legal === '-' ? 'sem' : '';
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${p.trf}</strong></td>
+                            <td style="font-family: monospace; font-size: 0.9em;">${p.numero_precatorio}</td>
+                            <td class="valor">${formatarValor(p.valor)}</td>
+                            <td><span class="preferencia ${prefClass}">${p.preferencia_legal || '-'}</span></td>
+                            <td><span class="status novo">${p.status || 'novo'}</span></td>
+                            <td>
+                                <button class="btn btn-primary btn-small" onclick="gerarOferta(${p.id})">
+                                    ✨ Gerar Oferta
+                                </button>
+                            </td>
                         `;
+                        tbody.appendChild(tr);
                     });
                     
-                    html += '</tbody></table>';
-                    container.innerHTML = html;
-                    
-                    document.getElementById('debug-action').textContent = data.leads.length + ' leads carregados';
-                })
-                .catch(error => {
-                    document.getElementById('debug-action').textContent = 'Erro ao carregar leads: ' + error.message;
-                });
+                    table.style.display = 'table';
+                } else {
+                    empty.style.display = 'block';
+                }
+            } catch (error) {
+                loading.classList.remove('show');
+                empty.style.display = 'block';
+                console.error('Erro ao carregar precatórios:', error);
+            }
         }
+        
+        async function carregarEstatisticas() {
+            try {
+                const response = await fetch('/estatisticas');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('total-precatorios').textContent = 
+                        data.total_geral.total || 0;
+                    document.getElementById('valor-total').textContent = 
+                        formatarValor(data.total_geral.valor_total || 0);
+                    document.getElementById('total-tribunais').textContent = 
+                        data.por_trf.length || 0;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+        
+        async function gerarOferta(id) {
+            const btn = event.target;
+            btn.textContent = '⏳ Gerando...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/gerar-oferta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ precatorio_id: id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('oferta-texto').textContent = data.oferta;
+                    document.getElementById('modal-oferta').classList.add('show');
+                } else {
+                    alert('Erro ao gerar oferta: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            } finally {
+                btn.textContent = '✨ Gerar Oferta';
+                btn.disabled = false;
+            }
+        }
+        
+        function fecharModal() {
+            document.getElementById('modal-oferta').classList.remove('show');
+        }
+        
+        function copiarOferta() {
+            const texto = document.getElementById('oferta-texto').textContent;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('Oferta copiada para a área de transferência!');
+            });
+        }
+        
+        // Carregar dados ao iniciar
+        carregarPrecatorios();
+        carregarEstatisticas();
     </script>
 </body>
 </html>
